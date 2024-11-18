@@ -13,6 +13,14 @@ internal class TestEntity
     public required decimal Amount { get; set; }
 }
 
+internal class TestEntity2
+{
+    public required int Id { get; set; }
+    public required string Name { get; set; }
+    public required DateTime CreatedAt { get; set; }
+    public required string Password { get; set; }
+}
+
 public class ExtensionTests(ITestOutputHelper testOutputHelper)
 {
     private readonly List<TestEntity> _collection =
@@ -43,6 +51,31 @@ public class ExtensionTests(ITestOutputHelper testOutputHelper)
             CreatedAt = new DateTime(2022, 1, 1),
             Price = 30.5f,
             Amount = 30.5m
+        }
+    ];
+
+    private readonly List<TestEntity2> _collection2 =
+    [
+        new()
+        {
+            Id = 1,
+            Name = "A",
+            CreatedAt = DateTime.Now,
+            Password = "123456"
+        },
+        new()
+        {
+            Id = 2,
+            Name = "B",
+            CreatedAt = DateTime.Now,
+            Password = "fhsdf@#%$"
+        },
+        new()
+        {
+            Id = 3,
+            Name = "C",
+            CreatedAt = DateTime.Now,
+            Password = "abcdefxyz123!"
         }
     ];
 
@@ -186,6 +219,7 @@ public class ExtensionTests(ITestOutputHelper testOutputHelper)
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
     }
 
+    // Filter By and Order By together
     [Fact]
     public void FilterByAndOrderByTest()
     {
@@ -205,5 +239,24 @@ public class ExtensionTests(ITestOutputHelper testOutputHelper)
 
         testOutputHelper.WriteLine("Filtered By Name NotEqual B and Ordered By Name DESC");
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
+    }
+
+    // Exclude Properties
+    [Fact]
+    public void ExcludePropertiesTest()
+    {
+        // Arrange
+        var queryable = _collection2.AsQueryable();
+
+        // Act
+        var result = queryable
+            .ExcludeProperties("CreatedAt", "Password")
+            .ToList();
+
+        // Assert
+        Assert.Equal(3, result.Count);
+
+        testOutputHelper.WriteLine("Excluded CreatedAt and Password");
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Id} {x.Name}"));
     }
 }
