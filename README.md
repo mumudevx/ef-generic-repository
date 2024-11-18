@@ -16,3 +16,4 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [ ] Change Detection and ExecuteUpdate (Need to update for UpdateRange: https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete)
 - [ ] ExecuteDelete (Need to update for RemoveRange: https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete)
 - [x] OrderBy Extension for dynamic ordering on front-end call (like: Server request when DataTable ordering change event fired: 'orderBy: name asc' or 'orderBy: name desc')
+- [x] FilterBy Extension for dynamic filtering with operators on front-end call (like: Server request when DataTable search event fired: 'filterBy: Name Equal B' or 'filterBy: Id GreaterThan 5')
