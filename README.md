@@ -1,5 +1,5 @@
 # ef-generic-repository
-This repository contains Entity Framework (EF 8) generic repository with various data operation methods.
+This repository contains Entity Framework (EF 8) generic repository with various data operation and IQueryable, IEnumerable extension methods.
 
 # Features / Methods
 - [x] Queryable Fetch
