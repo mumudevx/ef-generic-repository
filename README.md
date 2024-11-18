@@ -19,4 +19,4 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [x] FilterBy Extension for dynamic filtering with operators on front-end call (like: Server request when DataTable search event fired: 'filterBy: Name Equal B' or 'filterBy: Id GreaterThan 5')
   - Supported Operators: ```Equal```, ```NotEqual```, ```GreaterThan```, ```GreaterThanOrEqual```, ```LessThan```, ```LessThanOrEqual```, ```Contains```, ```StartsWith```, ```EndsWith```
   - Supported Data Types: ```String```, ```Bool```, ```Int```, ```Float```, ```Decimal```, ```DateTime```
-- [x] Exclude Extension for dynamic excluding fields. (Example using: ```queryable.ExcludeProperties("CreatedAt", "Password")```)
+- [x] Exclude Extension for excluding fields from entity object. (Example using: ```queryable.ExcludeProperties("CreatedAt", "Password")```)
