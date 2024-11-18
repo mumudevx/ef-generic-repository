@@ -73,6 +73,8 @@ public static class FilterByExtension
             return floatResult;
         if (decimal.TryParse(value, out var decimalResult))
             return decimalResult;
+        if (DateTime.TryParse(value, out var dateTimeResult))
+            return dateTimeResult;
         return value;
     }
 }
