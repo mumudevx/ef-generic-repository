@@ -20,3 +20,5 @@ This repository contains Entity Framework (EF 8) generic repository with various
   - Supported Operators: ```Equal```, ```NotEqual```, ```GreaterThan```, ```GreaterThanOrEqual```, ```LessThan```, ```LessThanOrEqual```, ```Contains```, ```StartsWith```, ```EndsWith```
   - Supported Data Types: ```String```, ```Bool```, ```Int```, ```Float```, ```Decimal```, ```DateTime```
 - [x] Exclude Extension for excluding fields from entity object. (Example using: ```queryable.ExcludeProperties("CreatedAt", "Password")```)
+- [] Multiple filterBy and orderBy support with and/or logical operators.
+- [] Application of extensions on generic repository methods.
