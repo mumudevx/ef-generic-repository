@@ -1,6 +1,6 @@
 namespace GenericRepository.Extensions;
 
-public static class OrderByExtensions
+public static class OrderByExtension
 {
     public static IEnumerable<T> OrderBy<T>(this IEnumerable<T> enumerable, string orderBy) =>
         enumerable.AsQueryable().OrderBy(orderBy).AsEnumerable();
