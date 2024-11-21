@@ -15,6 +15,7 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [x] Multiple/Range Delete
 - [ ] Change Detection and ExecuteUpdate (Need to update for UpdateRange: https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete)
 - [ ] ExecuteDelete (Need to update for RemoveRange: https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete)
+- [ ] Application of extensions on generic repository methods.
 
 # Extensions Features
 - [x] OrderBy Extension for dynamic ordering on front-end call (like: Server request when DataTable ordering change event fired: 'orderBy: name asc' or 'orderBy: name desc')
@@ -26,4 +27,3 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [ ] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
 - [ ] Support access property of collection or list of entity object on filterBy and orderBy.
 - [ ] Support multiple params for filterBy.
-- [ ] Application of extensions on generic repository methods.
