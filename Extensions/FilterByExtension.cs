@@ -9,12 +9,61 @@ public static class FilterByExtension
     {
         var type = typeof(T);
         var arg = Expression.Parameter(type, "x");
-        var property = type.GetProperty(filterByInfo.PropertyName);
-        var propertyAccess = Expression.MakeMemberAccess(arg, property!);
-        var constant = Expression.Constant(Convert.ChangeType(filterByInfo.Value, property!.PropertyType));
+
+        var propertyAccess = filterByInfo.PropertyName.Split('.').Length > 2
+            ? GetDeptLevelPropertyExpression(arg, filterByInfo.PropertyName)
+            : GetNestedPropertyExpression(arg, filterByInfo.PropertyName);
+
+        var constant = Expression.Constant(Convert.ChangeType(filterByInfo.Value, propertyAccess.Type));
         var body = GetExpressionBody(filterByInfo.Operator, propertyAccess, constant);
         var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
         return collection.Where(lambda);
+    }
+
+    private static Expression GetNestedPropertyExpression(Expression parameter, string propertyName)
+    {
+        var properties = propertyName.Split('.');
+        var propertyAccess = parameter;
+        var type = parameter.Type;
+
+        foreach (var property in properties)
+        {
+            var propertyInfo = type.GetProperty(property);
+            if (propertyInfo == null)
+            {
+                throw new ArgumentException($"Property '{property}' not found on type '{type.Name}'");
+            }
+
+            propertyAccess = Expression.Property(propertyAccess, propertyInfo);
+            type = propertyInfo.PropertyType;
+        }
+
+        return propertyAccess;
+    }
+
+    private static Expression GetDeptLevelPropertyExpression(Expression parameter, string propertyName)
+    {
+        var properties = propertyName.Split('.');
+        var propertyAccess = parameter;
+
+        foreach (var property in properties)
+        {
+            var propertyInfo = propertyAccess.Type.GetProperty(property);
+            if (propertyInfo == null)
+            {
+                throw new ArgumentException($"Property '{property}' not found on type '{propertyAccess.Type.Name}'");
+            }
+
+            var nullCheck = Expression.Equal(propertyAccess, Expression.Constant(null, propertyAccess.Type));
+            propertyAccess = Expression.Property(propertyAccess, propertyInfo);
+            propertyAccess = Expression.Condition(
+                nullCheck,
+                Expression.Constant(null, propertyInfo.PropertyType),
+                propertyAccess
+            );
+        }
+
+        return propertyAccess;
     }
 
     private static Expression GetExpressionBody(FilterOperator filterOperator, Expression propertyAccess,
@@ -29,30 +78,30 @@ public static class FilterByExtension
             FilterOperator.LessThan => Expression.LessThan(propertyAccess, constant),
             FilterOperator.LessThanOrEqual => Expression.LessThanOrEqual(propertyAccess, constant),
             FilterOperator.Contains => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("Contains", [typeof(string)])!, constant),
+                typeof(string).GetMethod("Contains", new[] { typeof(string) })!, constant),
             FilterOperator.StartsWith => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("StartsWith", [typeof(string)])!, constant),
+                typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, constant),
             FilterOperator.EndsWith => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("EndsWith", [typeof(string)])!, constant),
+                typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, constant),
             _ => throw new ArgumentOutOfRangeException(nameof(filterOperator), filterOperator, null)
         };
     }
 
     private static IEnumerable<FilterByInfo> ParseFilterBy(string filterBy)
     {
-        if (string.IsNullOrEmpty(filterBy)) yield break;
-
-        var items = filterBy.Split(',');
-        foreach (var item in items)
+        var filters = filterBy.Split(new[] { " AND ", " OR " }, StringSplitOptions.None);
+        foreach (var filter in filters)
         {
-            var pair = item.Trim().Split(' ');
-            if (pair.Length != 3)
+            var parts = filter.Split(new[] { ' ' }, 3);
+            if (parts.Length != 3)
+            {
                 throw new ArgumentException(
-                    $"Invalid FilterBy string '{item}'. Filter By Format: PropertyName Operator Value");
+                    $"Invalid FilterBy string '{filterBy}'. Filter By Format: PropertyName Operator Value");
+            }
 
-            var propertyName = pair[0];
-            var filterOperator = Enum.Parse<FilterOperator>(pair[1], true);
-            var value = ParseValue(pair[2]);
+            var propertyName = parts[0];
+            var filterOperator = Enum.Parse<FilterOperator>(parts[1], true);
+            var value = ParseValue(parts[2]);
 
             yield return new FilterByInfo
             {

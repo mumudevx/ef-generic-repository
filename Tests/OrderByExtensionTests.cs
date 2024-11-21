@@ -15,7 +15,20 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = true,
             CreatedAt = DateTime.Now,
             Price = 10.5f,
-            Amount = 10.5m
+            Amount = 10.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 1,
+                Name = "Sub C",
+                Age = 22,
+                TestEntity2 = new TestEntity2
+                {
+                    Id = 1,
+                    Name = "SubSub C",
+                    CreatedAt = DateTime.Now,
+                    Password = "12fewfX!@#"
+                }
+            }
         },
         new()
         {
@@ -24,7 +37,13 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = true,
             CreatedAt = DateTime.Now,
             Price = 20.5f,
-            Amount = 20.5m
+            Amount = 20.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 2,
+                Name = "Sub B",
+                Age = 23
+            }
         },
         new()
         {
@@ -33,10 +52,16 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = false,
             CreatedAt = new DateTime(2022, 1, 1),
             Price = 30.5f,
-            Amount = 30.5m
+            Amount = 30.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 3,
+                Name = "Sub A",
+                Age = 24
+            }
         }
     ];
-    
+
     [Fact]
     public void OrderByNameAsc()
     {
@@ -56,7 +81,7 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
         testOutputHelper.WriteLine("Ordered By Name ASC");
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
     }
-    
+
     [Fact]
     public void OrderByNameDesc()
     {
@@ -75,5 +100,44 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
 
         testOutputHelper.WriteLine("Ordered By Name DESC");
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
+    }
+
+    [Fact]
+    public void OrderByNestedProperty()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .OrderBy("SubEntity.Name DESC")
+            .ToList();
+
+        // Assert
+        Assert.Equal("Sub C", result[0].SubEntity.Name);
+        Assert.Equal("Sub B", result[1].SubEntity.Name);
+        Assert.Equal("Sub A", result[2].SubEntity.Name);
+
+        testOutputHelper.WriteLine("Ordered By SubEntity.Name DESC");
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name}"));
+    }
+
+    [Fact]
+    public void OrderBy2LevelNestedProperty()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .OrderBy("SubEntity.TestEntity2.Name DESC")
+            .ToList();
+
+        // Assert
+        Assert.Equal("SubSub C", result[0].SubEntity.TestEntity2?.Name);
+
+        testOutputHelper.WriteLine("Ordered By SubEntity.TestEntity2.Name DESC");
+        result.ForEach(x =>
+            testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name}"));
     }
 }

@@ -10,20 +10,12 @@ public static class OrderByExtension
 
     private static IQueryable<T> ApplyOrderBy<T>(IQueryable<T>? collection, OrderByInfo orderByInfo)
     {
-        var props = orderByInfo.PropertyName.Split('.');
         var type = typeof(T);
         var arg = Expression.Parameter(type, "x");
+        Expression propertyAccess = GetNestedPropertyExpression(arg, orderByInfo.PropertyName);
 
-        Expression expr = arg;
-        foreach (var prop in props)
-        {
-            var pi = type?.GetProperty(prop);
-            expr = Expression.Property(expr, pi!);
-            type = pi?.PropertyType;
-        }
-
-        var delegateType = typeof(Func<,>).MakeGenericType(typeof(T), type!);
-        var lambda = Expression.Lambda(delegateType, expr, arg);
+        var delegateType = typeof(Func<,>).MakeGenericType(typeof(T), propertyAccess.Type);
+        var lambda = Expression.Lambda(delegateType, propertyAccess, arg);
         string methodName;
 
         if (!orderByInfo.Initial && collection is IOrderedQueryable<T>)
@@ -40,8 +32,33 @@ public static class OrderByExtension
                           && method.IsGenericMethodDefinition
                           && method.GetGenericArguments().Length == 2
                           && method.GetParameters().Length == 2)
-            .MakeGenericMethod(typeof(T), type!)
-            .Invoke(null, [collection, lambda])!;
+            .MakeGenericMethod(typeof(T), propertyAccess.Type)
+            .Invoke(null, new object[] { collection, lambda })!;
+    }
+
+    private static Expression GetNestedPropertyExpression(Expression parameter, string propertyName)
+    {
+        var properties = propertyName.Split('.');
+        Expression propertyAccess = parameter;
+
+        foreach (var property in properties)
+        {
+            var propertyInfo = propertyAccess.Type.GetProperty(property);
+            if (propertyInfo == null)
+            {
+                throw new ArgumentException($"Property '{property}' not found on type '{propertyAccess.Type.Name}'");
+            }
+
+            var nullCheck = Expression.Equal(propertyAccess, Expression.Constant(null, propertyAccess.Type));
+            propertyAccess = Expression.Property(propertyAccess, propertyInfo);
+            propertyAccess = Expression.Condition(
+                nullCheck,
+                Expression.Constant(null, propertyInfo.PropertyType),
+                propertyAccess
+            );
+        }
+
+        return propertyAccess;
     }
 
     private static IEnumerable<OrderByInfo> ParseOrderBy(string orderBy)

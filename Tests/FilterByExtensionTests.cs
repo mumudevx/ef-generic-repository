@@ -15,7 +15,26 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = true,
             CreatedAt = DateTime.Now,
             Price = 10.5f,
-            Amount = 10.5m
+            Amount = 10.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 1,
+                Name = "Sub A",
+                Age = 22,
+                TestEntity2 = new TestEntity2
+                {
+                    Id = 1,
+                    Name = "Sub A2",
+                    CreatedAt = DateTime.Now,
+                    Password = "12fewfX!@#",
+                    SubEntity = new TestSubEntity
+                    {
+                        Id = 1,
+                        Name = "Sub Sub A3",
+                        Age = 22
+                    }
+                }
+            }
         },
         new()
         {
@@ -24,7 +43,13 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = true,
             CreatedAt = DateTime.Now,
             Price = 20.5f,
-            Amount = 20.5m
+            Amount = 20.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 2,
+                Name = "Sub B",
+                Age = 23
+            }
         },
         new()
         {
@@ -33,7 +58,13 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
             IsActive = false,
             CreatedAt = new DateTime(2022, 1, 1),
             Price = 30.5f,
-            Amount = 30.5m
+            Amount = 30.5m,
+            SubEntity = new TestSubEntity
+            {
+                Id = 3,
+                Name = "Sub C",
+                Age = 24
+            }
         }
     ];
 
@@ -158,9 +189,9 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
     }
 
-    // Filter by multiple properties with and logical operator
+    // Filter by multiple properties
     [Fact]
-    public void FilterByMultiplePropertiesWithAnd()
+    public void FilterByMultipleProperties()
     {
         // Arrange
         var queryable = _collection.AsQueryable();
@@ -174,26 +205,72 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
         Assert.Single(result);
         Assert.Equal("B", result[0].Name);
 
-        testOutputHelper.WriteLine("Filtered By IsActive Equal true and Price GreaterThan 20.5");
+        testOutputHelper.WriteLine("Filtered By IsActive Equal true AND Price GreaterThan 20.5");
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
     }
 
-    // Filter by multiple properties with or logical operator
+    // Filter by nested property
     [Fact]
-    public void FilterByMultiplePropertiesWithOr()
+    public void FilterByNestedProperty()
     {
         // Arrange
         var queryable = _collection.AsQueryable();
 
         // Act
         var result = queryable
-            .FilterBy("IsActive Equal true OR Price GreaterThan 30.5") 
+            .FilterBy("SubEntity.Age GreaterThan 23")
             .ToList();
 
         // Assert
-        Assert.Equal(2, result.Count);
+        Assert.Single(result);
+        Assert.Equal("Sub C", result[0].SubEntity.Name);
 
-        testOutputHelper.WriteLine("Filtered By IsActive Equal true or Price GreaterThan 20.5");
-        result.ForEach(x => testOutputHelper.WriteLine(x.Name));
+        testOutputHelper.WriteLine("Filtered By SubEntity.Age GreaterThan 23");
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name}"));
+    }
+
+    // Filter by 2-level nested property
+    [Fact]
+    public void FilterBy2LevelNestedProperty()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("SubEntity.TestEntity2.Password Equal 12fewfX!@#")
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("A", result[0].Name);
+
+        testOutputHelper.WriteLine("Filtered By SubEntity.TestEntity2.Password Equal 12fewfX!@#");
+
+        result.ForEach(x =>
+            testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name}"));
+    }
+
+    // Filter by 3-level nested property
+    [Fact]
+    public void FilterBy3LevelNestedProperty()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("SubEntity.TestEntity2.SubEntity.Name Equal Sub Sub A3")
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("A", result[0].Name);
+
+        testOutputHelper.WriteLine("Filtered By SubEntity.TestEntity2.SubEntity.Name Equal Sub Sub A3");
+
+        result.ForEach(x =>
+            testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name} - " +
+                                       $"{x.SubEntity.TestEntity2?.SubEntity?.Name}"));
     }
 }

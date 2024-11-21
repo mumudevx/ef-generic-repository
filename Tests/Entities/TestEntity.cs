@@ -8,4 +8,6 @@ public class TestEntity
     public required DateTime CreatedAt { get; set; }
     public required float Price { get; set; }
     public required decimal Amount { get; set; }
+
+    public required TestSubEntity SubEntity { get; set; }
 }
