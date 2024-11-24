@@ -26,4 +26,4 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [x] Support for x-level nested properties on filterBy and orderBy.
 - [x] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
 - [ ] Support access property of collection or list of entity object on filterBy and orderBy.
-- [ ] Support multiple params for filterBy.
+- [x] Support multiple params for filterBy. (Example: ```queryable.FilterBy("Id Contains [1,2]", "SubEntity.Age Equal 22", "IsActive Equal true"))```)

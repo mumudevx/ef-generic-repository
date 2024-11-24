@@ -2,8 +2,8 @@
 
 public static class FilterByExtension
 {
-    public static IQueryable<T> FilterBy<T>(this IQueryable<T> collection, string filterBy) =>
-        ParseFilterBy(filterBy).Aggregate(collection, ApplyFilterBy);
+    public static IQueryable<T> FilterBy<T>(this IQueryable<T> collection, params string[] filterBy) =>
+        filterBy.SelectMany(ParseFilterBy).Aggregate(collection, ApplyFilterBy);
 
     private static IQueryable<T> ApplyFilterBy<T>(IQueryable<T> collection, FilterByInfo filterByInfo)
     {

@@ -189,26 +189,6 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
         result.ForEach(x => testOutputHelper.WriteLine(x.Name));
     }
 
-    // Filter by multiple properties
-    [Fact]
-    public void FilterByMultipleProperties()
-    {
-        // Arrange
-        var queryable = _collection.AsQueryable();
-
-        // Act
-        var result = queryable
-            .FilterBy("IsActive Equal true AND Price GreaterThan 20.5")
-            .ToList();
-
-        // Assert
-        Assert.Single(result);
-        Assert.Equal("B", result[0].Name);
-
-        testOutputHelper.WriteLine("Filtered By IsActive Equal true AND Price GreaterThan 20.5");
-        result.ForEach(x => testOutputHelper.WriteLine(x.Name));
-    }
-
     // Filter by nested property
     [Fact]
     public void FilterByNestedProperty()
@@ -294,5 +274,32 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
         testOutputHelper.WriteLine("Filtered by Id Contains [2,3]");
 
         result.ForEach(x => testOutputHelper.WriteLine($"{x.Id} - {x.Name}"));
+    }
+
+    // Filter by multiple params
+    [Fact]
+    public void FilterByMultipleParams()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy(
+                "Id Contains [1,2]",
+                "SubEntity.Age Equal 22",
+                "IsActive Equal true"
+            )
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("A", result[0].Name);
+        Assert.Equal(22, result[0].SubEntity.Age);
+        Assert.True(result[0].IsActive);
+
+        testOutputHelper.WriteLine("Filtered By Multiple Params");
+        result.ForEach(x => testOutputHelper.WriteLine(
+            $"{x.Name} - ID: {x.Id} - Age: {x.SubEntity.Age} - IsActive: {x.IsActive}"));
     }
 }
