@@ -24,6 +24,6 @@ This repository contains Entity Framework (EF 8) generic repository with various
   - Supported Data Types: ```String```, ```Bool```, ```Int```, ```Float```, ```Decimal```, ```DateTime```
 - [x] Exclude Extension for excluding fields from entity object. (Example using: ```queryable.ExcludeProperties("CreatedAt", "Password")```)
 - [x] Support for x-level nested properties on filterBy and orderBy.
-- [ ] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
+- [x] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
 - [ ] Support access property of collection or list of entity object on filterBy and orderBy.
 - [ ] Support multiple params for filterBy.

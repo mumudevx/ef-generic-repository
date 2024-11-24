@@ -273,4 +273,26 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
             testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name} - " +
                                        $"{x.SubEntity.TestEntity2?.SubEntity?.Name}"));
     }
+
+    // Filter multiple selection for integer values
+    [Fact]
+    public void FilterByMultipleIdSelection()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("Id Contains [2,3]")
+            .ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result[0].Id);
+        Assert.Equal(3, result[1].Id);
+
+        testOutputHelper.WriteLine("Filtered by Id Contains [2,3]");
+
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Id} - {x.Name}"));
+    }
 }

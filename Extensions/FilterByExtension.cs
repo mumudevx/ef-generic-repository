@@ -14,10 +14,22 @@ public static class FilterByExtension
             ? GetDeptLevelPropertyExpression(arg, filterByInfo.PropertyName)
             : GetNestedPropertyExpression(arg, filterByInfo.PropertyName);
 
-        var constant = Expression.Constant(Convert.ChangeType(filterByInfo.Value, propertyAccess.Type));
-        var body = GetExpressionBody(filterByInfo.Operator, propertyAccess, constant);
-        var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
-        return collection.Where(lambda);
+        if (filterByInfo.Value is IEnumerable<int> intList)
+        {
+            var constant = Expression.Constant(intList);
+            var containsMethod = typeof(List<int>).GetMethod("Contains", new[] { typeof(int) });
+            var body = Expression.Call(constant, containsMethod!, propertyAccess);
+
+            var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
+            return collection.Where(lambda);
+        }
+        else
+        {
+            var constant = Expression.Constant(Convert.ChangeType(filterByInfo.Value, propertyAccess.Type));
+            var body = GetExpressionBody(filterByInfo.Operator, propertyAccess, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
+            return collection.Where(lambda);
+        }
     }
 
     private static Expression GetNestedPropertyExpression(Expression parameter, string propertyName)
@@ -118,12 +130,21 @@ public static class FilterByExtension
             return boolResult;
         if (int.TryParse(value, out var intResult))
             return intResult;
-        if (float.TryParse(value, out var floatResult))
+        if (float.TryParse(value, CultureInfo.InvariantCulture, out var floatResult))
             return floatResult;
         if (decimal.TryParse(value, out var decimalResult))
             return decimalResult;
         if (DateTime.TryParse(value, out var dateTimeResult))
             return dateTimeResult;
+
+        if (value.Contains('['))
+        {
+            var trimmedValue = value.Trim('[', ']');
+            var parts = trimmedValue.Split(',');
+            var intList = parts.Select(int.Parse).ToList();
+            return intList;
+        }
+
         return value;
     }
 }
