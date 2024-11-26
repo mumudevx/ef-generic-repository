@@ -27,3 +27,6 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [x] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
 - [ ] Support access property of collection or list of entity object on filterBy and orderBy.
 - [x] Support multiple params for filterBy. (Example: ```queryable.FilterBy("Id Contains [1,2]", "SubEntity.Age Equal 22", "IsActive Equal true"))```)
+- [x] Support for and/or operator in filter expression even with complex ones. 
+  - ```queryable.FilterBy("Id Equal 1 AND IsActive Equal True", "Amount GreaterThan 10")```
+  - ```queryable.FilterBy("Id Equal 1 OR Id Equal 2", "Amount GreaterThan 19 OR SubEntity.Age GreaterThan 20")```

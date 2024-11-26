@@ -302,4 +302,87 @@ public class FilterByExtensionTests(ITestOutputHelper testOutputHelper)
         result.ForEach(x => testOutputHelper.WriteLine(
             $"{x.Name} - ID: {x.Id} - Age: {x.SubEntity.Age} - IsActive: {x.IsActive}"));
     }
+
+    // Filter by with and operator in same param
+    [Fact]
+    public void FilterByWithAndOperator()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("Id Equal 1 AND IsActive Equal True")
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("A", result[0].Name);
+
+        testOutputHelper.WriteLine("FilteredBy Id Equal 1 AND IsActive Equal True");
+        result.ForEach(x => testOutputHelper.WriteLine($"ID: {x.Id} - {x.Name}"));
+    }
+
+    // Filter by with or operator in same param
+    [Fact]
+    public void FilterByWithOrOperator()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("Id Equal 1 OR IsActive Equal True")
+            .ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.Equal("A", result[0].Name);
+        Assert.Equal("B", result[1].Name);
+
+        testOutputHelper.WriteLine("Id Equal 1 OR IsActive Equal True");
+        result.ForEach(x => testOutputHelper.WriteLine($"ID: {x.Id} - {x.Name}"));
+    }
+
+    // Filter by with and operator complex filtering
+    [Fact]
+    public void FilterByWithAndOperatorComplex()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("Id Equal 1 AND IsActive Equal True", "Amount GreaterThan 10")
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("A", result[0].Name);
+
+        testOutputHelper.WriteLine("(Id Equal 1 AND IsActive Equal True) AND (Amount GreaterThan 10)");
+        
+        result.ForEach(x => testOutputHelper.WriteLine($"ID: {x.Id} - {x.Name}"));
+    }
+
+    // Filter by with or operator complex filtering
+    [Fact]
+    public void FilterByWithOrOperatorComplex()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .FilterBy("Id Equal 1 OR Id Equal 2", "Amount GreaterThan 19")
+            .ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("B", result[0].Name);
+
+        testOutputHelper.WriteLine("(Id Equal 1 OR Id Equal 2) AND (Amount GreaterThan 19)");
+
+        result.ForEach(x => testOutputHelper.WriteLine($"ID: {x.Id} - {x.Name}"));
+    }
 }

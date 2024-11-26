@@ -2,34 +2,70 @@
 
 public static class FilterByExtension
 {
-    public static IQueryable<T> FilterBy<T>(this IQueryable<T> collection, params string[] filterBy) =>
-        filterBy.SelectMany(ParseFilterBy).Aggregate(collection, ApplyFilterBy);
-
-    private static IQueryable<T> ApplyFilterBy<T>(IQueryable<T> collection, FilterByInfo filterByInfo)
+    public static IQueryable<T> FilterBy<T>(this IQueryable<T> collection, params string[] filterBy)
     {
-        var type = typeof(T);
-        var arg = Expression.Parameter(type, "x");
+        return filterBy.Aggregate(collection, (current, filter) =>
+        {
+            var conditions = ParseFilterBy(filter).ToList();
 
+            if (conditions.Count == 0)
+                return current;
+
+            var parameter = Expression.Parameter(typeof(T), "x");
+
+            var orGroups = conditions.Split(c => !c.IsAndCondition);
+
+            // Combine AND conditions within each OR group, then combine OR groups
+            var combinedExpression = orGroups
+                .Select(group => group
+                    .Select(f => BuildFilterExpression(parameter, f))
+                    .Aggregate(Expression.AndAlso))
+                .Aggregate(Expression.OrElse);
+
+            var lambda = Expression.Lambda<Func<T, bool>>(combinedExpression, parameter);
+            return current.Where(lambda);
+        });
+    }
+
+    private static Expression BuildFilterExpression(ParameterExpression parameter, FilterByInfo filterByInfo)
+    {
         var propertyAccess = filterByInfo.PropertyName.Split('.').Length > 2
-            ? GetDeptLevelPropertyExpression(arg, filterByInfo.PropertyName)
-            : GetNestedPropertyExpression(arg, filterByInfo.PropertyName);
+            ? GetDeptLevelPropertyExpression(parameter, filterByInfo.PropertyName)
+            : GetNestedPropertyExpression(parameter, filterByInfo.PropertyName);
 
         if (filterByInfo.Value is IEnumerable<int> intList)
         {
             var constant = Expression.Constant(intList);
-            var containsMethod = typeof(List<int>).GetMethod("Contains", new[] { typeof(int) });
-            var body = Expression.Call(constant, containsMethod!, propertyAccess);
+            var containsMethod = typeof(List<int>).GetMethod("Contains", [typeof(int)]);
 
-            var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
-            return collection.Where(lambda);
+            return Expression.Call(constant,
+                containsMethod ?? throw new InvalidOperationException(),
+                propertyAccess);
         }
         else
         {
             var constant = Expression.Constant(Convert.ChangeType(filterByInfo.Value, propertyAccess.Type));
-            var body = GetExpressionBody(filterByInfo.Operator, propertyAccess, constant);
-            var lambda = Expression.Lambda<Func<T, bool>>(body, arg);
-            return collection.Where(lambda);
+            return GetExpressionBody(filterByInfo.Operator, propertyAccess, constant);
         }
+    }
+
+    private static IEnumerable<IEnumerable<T>> Split<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+    {
+        var group = new List<T>();
+
+        foreach (var item in source)
+        {
+            if (predicate(item) && group.Any())
+            {
+                yield return group;
+                group = [];
+            }
+
+            group.Add(item);
+        }
+
+        if (group.Any())
+            yield return group;
     }
 
     private static Expression GetNestedPropertyExpression(Expression parameter, string propertyName)
@@ -90,37 +126,58 @@ public static class FilterByExtension
             FilterOperator.LessThan => Expression.LessThan(propertyAccess, constant),
             FilterOperator.LessThanOrEqual => Expression.LessThanOrEqual(propertyAccess, constant),
             FilterOperator.Contains => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("Contains", new[] { typeof(string) })!, constant),
+                typeof(string).GetMethod("Contains", [typeof(string)])
+                ?? throw new InvalidOperationException(), constant),
             FilterOperator.StartsWith => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("StartsWith", new[] { typeof(string) })!, constant),
+                typeof(string).GetMethod("StartsWith", [typeof(string)])
+                ?? throw new InvalidOperationException(), constant),
             FilterOperator.EndsWith => Expression.Call(propertyAccess,
-                typeof(string).GetMethod("EndsWith", new[] { typeof(string) })!, constant),
+                typeof(string).GetMethod("EndsWith", [typeof(string)])
+                ?? throw new InvalidOperationException(), constant),
             _ => throw new ArgumentOutOfRangeException(nameof(filterOperator), filterOperator, null)
         };
     }
 
     private static IEnumerable<FilterByInfo> ParseFilterBy(string filterBy)
     {
-        var filters = filterBy.Split(new[] { " AND ", " OR " }, StringSplitOptions.None);
-        foreach (var filter in filters)
+        var orGroups = filterBy.Split([" OR "], StringSplitOptions.None);
+
+        foreach (var orGroup in orGroups)
         {
-            var parts = filter.Split(new[] { ' ' }, 3);
-            if (parts.Length != 3)
+            // For each OR group, create a list of AND conditions
+            var andConditions = orGroup.Split([" AND "], StringSplitOptions.None)
+                .Select(filter =>
+                {
+                    var parts = filter.Split([' '], 3);
+                    if (parts.Length != 3)
+                    {
+                        throw new ArgumentException(
+                            $"Invalid FilterBy string '{filterBy}'. Filter By Format: PropertyName Operator Value");
+                    }
+
+                    var propertyName = parts[0];
+                    Enum.TryParse<FilterOperator>(parts[1], true, out var filterOperator);
+                    var value = ParseValue(parts[2]);
+
+                    return new FilterByInfo
+                    {
+                        PropertyName = propertyName,
+                        Operator = filterOperator,
+                        Value = value,
+                        IsAndCondition = true
+                    };
+                }).ToList();
+
+            // Mark the first condition of each OR group
+            if (andConditions.Any())
             {
-                throw new ArgumentException(
-                    $"Invalid FilterBy string '{filterBy}'. Filter By Format: PropertyName Operator Value");
+                andConditions[0].IsAndCondition = false;
             }
 
-            var propertyName = parts[0];
-            var filterOperator = Enum.Parse<FilterOperator>(parts[1], true);
-            var value = ParseValue(parts[2]);
-
-            yield return new FilterByInfo
+            foreach (var condition in andConditions)
             {
-                PropertyName = propertyName,
-                Operator = filterOperator,
-                Value = value
-            };
+                yield return condition;
+            }
         }
     }
 
@@ -130,7 +187,7 @@ public static class FilterByExtension
             return boolResult;
         if (int.TryParse(value, out var intResult))
             return intResult;
-        if (float.TryParse(value, CultureInfo.InvariantCulture, out var floatResult))
+        if (float.TryParse(value, out var floatResult))
             return floatResult;
         if (decimal.TryParse(value, out var decimalResult))
             return decimalResult;
@@ -154,6 +211,7 @@ internal class FilterByInfo
     public string PropertyName { get; init; } = string.Empty;
     public object Value { get; init; } = string.Empty;
     public FilterOperator Operator { get; init; }
+    public bool IsAndCondition { get; set; }
 }
 
 public enum FilterOperator
