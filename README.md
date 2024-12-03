@@ -21,7 +21,7 @@ This repository contains Entity Framework (EF 8) generic repository with various
 - [x] OrderBy Extension for dynamic ordering on front-end call (like: Server request when DataTable ordering change event fired: 'orderBy: name asc' or 'orderBy: name desc')
 - [x] FilterBy Extension for dynamic filtering with operators on front-end call (like: Server request when DataTable search event fired: 'filterBy: Name Equal B' or 'filterBy: Id GreaterThan 5')
   - Supported Operators: ```Equal```, ```NotEqual```, ```GreaterThan```, ```GreaterThanOrEqual```, ```LessThan```, ```LessThanOrEqual```, ```Contains```, ```StartsWith```, ```EndsWith```
-  - Supported Data Types: ```String```, ```Bool```, ```Int```, ```Float```, ```Decimal```, ```DateTime```
+  - Supported Data Types: ```String```, ```Bool```, ```Int```, ```Float```, ```Decimal```, ```DateTime```, ```List<int>```
 - [x] Exclude Extension for excluding fields from entity object. (Example using: ```queryable.ExcludeProperties("CreatedAt", "Password")```)
 - [x] Support for x-level nested properties on filterBy and orderBy.
 - [x] Support for multiple contains for int arrays. (Example: ```queryable.FilterBy("Id Contains [1,2]")``` or ```queryable.FilterBy("SubEntity.Id Contains [1,2]")```)
