@@ -26,7 +26,13 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
                     Id = 1,
                     Name = "SubSub C",
                     CreatedAt = DateTime.Now,
-                    Password = "12fewfX!@#"
+                    Password = "12fewfX!@#",
+                    SubEntity = new TestSubEntity
+                    {
+                        Id = 1,
+                        Name = "SubSubSub A",
+                        Age = 20
+                    }
                 }
             }
         },
@@ -61,6 +67,46 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
             }
         }
     ];
+
+    [Fact]
+    public void OrderByIdAsc()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .OrderBy("Id")
+            .ToList();
+
+        // Assert
+        Assert.Equal("A", result[0].Name);
+        Assert.Equal("B", result[1].Name);
+        Assert.Equal("C", result[2].Name);
+
+        testOutputHelper.WriteLine("Ordered By Name ASC");
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Id} - {x.Name}"));
+    }
+
+    [Fact]
+    public void OrderByIdDesc()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .OrderBy("Id DESC")
+            .ToList();
+
+        // Assert
+        Assert.Equal("C", result[0].Name);
+        Assert.Equal("B", result[1].Name);
+        Assert.Equal("A", result[2].Name);
+
+        testOutputHelper.WriteLine("Ordered By Name ASC");
+        result.ForEach(x => testOutputHelper.WriteLine($"{x.Id} - {x.Name}"));
+    }
 
     [Fact]
     public void OrderByNameAsc()
@@ -137,6 +183,26 @@ public class OrderByExtensionTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("SubSub C", result[0].SubEntity.TestEntity2?.Name);
 
         testOutputHelper.WriteLine("Ordered By SubEntity.TestEntity2.Name DESC");
+        result.ForEach(x =>
+            testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name}"));
+    }
+    
+    [Fact]
+    public void OrderBy3LevelNestedProperty()
+    {
+        // Arrange
+        var queryable = _collection.AsQueryable();
+
+        // Act
+        var result = queryable
+            .OrderBy("SubEntity.TestEntity2.SubEntity.Name DESC")
+            .ToList();
+
+        // Assert
+        Assert.Equal("SubSubSub A", result[0].SubEntity.TestEntity2?.SubEntity?.Name);
+
+        testOutputHelper.WriteLine("Ordered By SubEntity.TestEntity2.SubEntity.Name DESC");
+        
         result.ForEach(x =>
             testOutputHelper.WriteLine($"{x.Name} - {x.SubEntity.Name} - {x.SubEntity.TestEntity2?.Name}"));
     }

@@ -33,7 +33,7 @@ public static class OrderByExtension
                           && method.GetGenericArguments().Length == 2
                           && method.GetParameters().Length == 2)
             .MakeGenericMethod(typeof(T), propertyAccess.Type)
-            .Invoke(null, new object[] { collection, lambda })!;
+            .Invoke(null, [collection, lambda])!;
     }
 
     private static Expression GetNestedPropertyExpression(Expression parameter, string propertyName)
@@ -49,13 +49,21 @@ public static class OrderByExtension
                 throw new ArgumentException($"Property '{property}' not found on type '{propertyAccess.Type.Name}'");
             }
 
-            var nullCheck = Expression.Equal(propertyAccess, Expression.Constant(null, propertyAccess.Type));
-            propertyAccess = Expression.Property(propertyAccess, propertyInfo);
-            propertyAccess = Expression.Condition(
-                nullCheck,
-                Expression.Constant(null, propertyInfo.PropertyType),
-                propertyAccess
-            );
+            if (propertyAccess.Type.IsClass || Nullable.GetUnderlyingType(propertyAccess.Type) != null)
+            {
+                var nullCheck = Expression.Equal(propertyAccess, Expression.Constant(null, propertyAccess.Type));
+                var defaultValue = Expression.Constant(
+                    propertyInfo.PropertyType.IsValueType ?
+                        Activator.CreateInstance(propertyInfo.PropertyType) :
+                        null,
+                    propertyInfo.PropertyType);
+                var propertyValue = Expression.Property(propertyAccess, propertyInfo);
+                propertyAccess = Expression.Condition(nullCheck, defaultValue, propertyValue);
+            }
+            else
+            {
+                propertyAccess = Expression.Property(propertyAccess, propertyInfo);
+            }
         }
 
         return propertyAccess;
